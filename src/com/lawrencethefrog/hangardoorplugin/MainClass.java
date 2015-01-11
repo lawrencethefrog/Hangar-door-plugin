@@ -25,7 +25,7 @@ public class MainClass extends JavaPlugin implements Listener{
 	
 	@Override
 	public void onEnable(){
-		getServer().getLogger().info("Succesfully started lawrencethefrog's hangar door plugin");
+		getServer().getLogger().info("Successfully started lawrencethefrog's hangar door plugin");
 		getServer().getPluginManager().registerEvents(this, this);
 		
 	}
@@ -52,7 +52,7 @@ public class MainClass extends JavaPlugin implements Listener{
 					Block testingBlock = firstIronBlock.getRelative(adjacentLeftFace, i);
 					if (testingBlock.getType() == Material.IRON_BLOCK) {
 						doorWidth = i -1;		//save door width (minus removes width of end rail)
-						getServer().getLogger().info("Door width is " + doorWidth);
+						//getServer().getLogger().info("Door width is " + doorWidth);
 						break;
 					}
 				}
@@ -88,14 +88,14 @@ public class MainClass extends JavaPlugin implements Listener{
 							}
 							if (c == doorWidth) lastDoorCorner = testingBlock;				//if on end of row register as last
 						} else if (firstDoorCorner != null)  {								//if not allowed block and  finish detection
-							getServer().getLogger().info("Error at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ());
+							//getServer().getLogger().info("Error at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ());
 							break r;													//finish detection
 						}
 					}
 				}
 				//if no full row found, finish
 				if ((firstDoorCorner == null) || (lastDoorCorner == null)){
-					getServer().getLogger().info("Door detection failed! Either the door is longer than the frame or not a full row.");
+					//getServer().getLogger().info("Door detection failed! Either the door is longer than the frame or not a full row.");
 					return;
 				}
 				
@@ -104,7 +104,7 @@ public class MainClass extends JavaPlugin implements Listener{
 					//TODO: air checking
 					Block testingBlock = lastDoorCorner.getRelative(direction).getRelative(adjacentRightFace, c);
 					if (testingBlock.getType() != Material.AIR){	//if air is not found in front of door
-						getServer().getLogger().info("Block at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ() + " is not air!");
+						//getServer().getLogger().info("Block at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ() + " is not air!");
 						return;										//finish
 					}
 				}
@@ -186,7 +186,7 @@ public class MainClass extends JavaPlugin implements Listener{
 			if 		(block.getZ() < lowestZ) lowestZ = block.getZ();
 			else if (block.getZ() > highestZ) highestZ= block.getZ();
 		}
-		getServer().getLogger().info("lowestX: " + lowestX +", highestX: " + highestX+", lowestZ: " + lowestZ +", highestZ: " + highestZ);
+		//getServer().getLogger().info("lowestX: " + lowestX +", highestX: " + highestX+", lowestZ: " + lowestZ +", highestZ: " + highestZ);
 		
 		String copyCommand = "clone";		//command to copy blocks
 		copyCommand = copyCommand + " " + String.valueOf(highestX );					//x1
@@ -210,7 +210,7 @@ public class MainClass extends JavaPlugin implements Listener{
 		for (int i = 0; i < doorWidth; i++){
 			blocksUpForDeletion.add(cornerBlocks.get(0).getRelative(adjacentLeftFace, i));
 		}
-		getServer().getLogger().info("Deletion blocks: " + blocksUpForDeletion.toString());
+		//getServer().getLogger().info("Deletion blocks: " + blocksUpForDeletion.toString());
 		lowestX = cornerBlocks.get(0).getX();
 		highestX = cornerBlocks.get(0).getX();
 		lowestZ = cornerBlocks.get(0).getZ();
@@ -233,7 +233,7 @@ public class MainClass extends JavaPlugin implements Listener{
 		fillCommand = fillCommand + " " + String.valueOf(highestZ);						//z
 		fillCommand = fillCommand + " minecraft:air";
 		
-		getServer().getLogger().info("Fill cmd: " + fillCommand);
+		//getServer().getLogger().info("Fill cmd: " + fillCommand);
 		
 		
 		Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), fillCommand);
