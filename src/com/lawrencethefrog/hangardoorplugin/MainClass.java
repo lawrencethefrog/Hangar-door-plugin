@@ -21,10 +21,13 @@ public class MainClass extends JavaPlugin implements Listener{
 	static final int maxWidth = 10;
 	static final Material allowedMaterial = Material.WOOD;
 	
+
+	
 	@Override
 	public void onEnable(){
 		getServer().getLogger().info("Succesfully started lawrencethefrog's hangar door plugin");
 		getServer().getPluginManager().registerEvents(this, this);
+		
 	}
 	
 	@EventHandler(priority = EventPriority.NORMAL)
@@ -41,6 +44,8 @@ public class MainClass extends JavaPlugin implements Listener{
 			if(firstIronBlock.getType() == Material.IRON_BLOCK){
 				
 				BlockFace adjacentLeftFace = getAdjacentLeftFace(direction);
+				BlockFace adjacentRightFace = getAdjacentLeftFace(direction.getOppositeFace());
+				
 				int doorWidth = 0;
 				//get width
 				for (int i = 1; i <= maxWidth + 1; i++){
@@ -74,14 +79,17 @@ public class MainClass extends JavaPlugin implements Listener{
 				Block lastDoorCorner = null;
 				
 				//find door corners
-				for(int r = 0; r <= frameLength; r++){
+				r: for(int r = 1; r <= frameLength; r++){
 					for(int c = 1; c <= doorWidth; c++){
 						Block testingBlock = poweredBlock.getRelative(direction, r).getRelative(adjacentLeftFace, c);
 						if (testingBlock.getType() == allowedMaterial){						//if door block found
-							if (firstDoorCorner == null){									//if first one
+							if (firstDoorCorner == null){									//if first allowed block found
 								firstDoorCorner = testingBlock;	 							//register as first corner
 							}
-							if (c == doorWidth) lastDoorCorner = testingBlock;					//if on end of row register as last
+							if (c == doorWidth) lastDoorCorner = testingBlock;				//if on end of row register as last
+						} else if (firstDoorCorner != null)  {								//if not allowed block and  finish detection
+							getServer().getLogger().info("Error at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ());
+							break r;													//finish detection
 						}
 					}
 				}
@@ -92,8 +100,13 @@ public class MainClass extends JavaPlugin implements Listener{
 				}
 				
 				//check blocks in front of lastDoorCorner's row are air				
-				for (int c = 0; c >= doorWidth; c++){
+				for (int c = 0; c < doorWidth; c++){
 					//TODO: air checking
+					Block testingBlock = lastDoorCorner.getRelative(direction).getRelative(adjacentRightFace, c);
+					if (testingBlock.getType() != Material.AIR){	//if air is not found in front of door
+						getServer().getLogger().info("Block at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ() + " is not air!");
+						return;										//finish
+					}
 				}
 				
 				ArrayList<Block> cornerBlockArray = new ArrayList<>();
