@@ -1,9 +1,7 @@
 package com.lawrencethefrog.hangardoorplugin;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -78,6 +76,11 @@ public class MainClass extends JavaPlugin implements Listener{
 				Block firstDoorCorner = null;
 				Block lastDoorCorner = null;
 				
+				int firstCornerRow = 0;
+				int doorLength = 0;
+				
+				ArrayList<Block> doorBlocks = new ArrayList<>();
+				
 				//find door corners
 				r: for(int r = 1; r <= frameLength; r++){
 					for(int c = 1; c <= doorWidth; c++){
@@ -85,10 +88,12 @@ public class MainClass extends JavaPlugin implements Listener{
 						if (testingBlock.getType() == allowedMaterial){						//if door block found
 							if (firstDoorCorner == null){									//if first allowed block found
 								firstDoorCorner = testingBlock;	 							//register as first corner
+								firstCornerRow = r;
 							}
+							doorBlocks.add(testingBlock);
 							if (c == doorWidth) lastDoorCorner = testingBlock;				//if on end of row register as last
 						} else if (firstDoorCorner != null)  {								//if not allowed block and  finish detection
-							//getServer().getLogger().info("Error at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ());
+							doorLength = r-firstCornerRow;
 							break r;													//finish detection
 						}
 					}
@@ -101,18 +106,14 @@ public class MainClass extends JavaPlugin implements Listener{
 				
 				//check blocks in front of lastDoorCorner's row are air				
 				for (int c = 0; c < doorWidth; c++){
-					//TODO: air checking
 					Block testingBlock = lastDoorCorner.getRelative(direction).getRelative(adjacentRightFace, c);
 					if (testingBlock.getType() != Material.AIR){	//if air is not found in front of door
 						//getServer().getLogger().info("Block at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ() + " is not air!");
 						return;										//finish
 					}
 				}
-				
-				ArrayList<Block> cornerBlockArray = new ArrayList<>();
-				cornerBlockArray.add(firstDoorCorner);
-				cornerBlockArray.add(lastDoorCorner);				
-				nudgeBlocks(direction, cornerBlockArray, doorWidth);
+					
+				nudgeBlocks(direction, firstDoorCorner, lastDoorCorner, doorBlocks, doorWidth, doorLength);
 				
 			}		
 		}
@@ -125,119 +126,29 @@ public class MainClass extends JavaPlugin implements Listener{
 		else return BlockFace.NORTH;
 	}
 	
-	private HashMap<String, Integer> getCoordinateChangeFromFace(BlockFace face){
-		HashMap<String, Integer> map = new HashMap<>();
-		int xShift;
-		int zShift;
-		
-		if (face == BlockFace.NORTH){		//if going north
-			xShift = 0;
-			zShift = -1;
-		} 
-		else if (face == BlockFace.SOUTH){	//if going south
-			xShift = 0;
-			zShift = 1;
-		} 
-		else if (face == BlockFace.EAST){	//if going east
-			xShift = 1;
-			zShift = 0;
-		} else if (face == BlockFace.WEST){	//if going west
-			xShift = -1;
-			zShift = 0;
-		} 
-		else if (face == BlockFace.NORTH_EAST){ 	//if going NE
-			xShift = 1;
-			zShift = -1;
-		}
-		else if (face == BlockFace.NORTH_WEST){ 	//if going NW
-			xShift = -1;
-			zShift = -1;
-		}
-		else if (face == BlockFace.SOUTH_WEST){ 	//if going SW
-			xShift = -1;
-			zShift = 1;
-		}
-		else { 										//if going SE
-			xShift = 1;
-			zShift = 1;
-		}
-		
-		
-		map.put("x", xShift);
-		map.put("z", zShift);
-		
-		return map;
-	}
 	
-	
-	private void nudgeBlocks(BlockFace directionTowards, ArrayList<Block> cornerBlocks, int doorWidth){
-		int xShiftTo = getCoordinateChangeFromFace(directionTowards).get("x");
-		int zShiftTo = getCoordinateChangeFromFace(directionTowards).get("z");
+	@SuppressWarnings("deprecation")
+	private void nudgeBlocks(BlockFace directionTowards, Block firstCorner, Block lastCorner, ArrayList<Block> allBlocks, int doorWidth, int doorLength){
 		
-		int lowestX = cornerBlocks.get(0).getX();
-		int highestX = cornerBlocks.get(0).getX();
-		int lowestZ = cornerBlocks.get(0).getZ();
-		int highestZ = cornerBlocks.get(0).getZ();
 		
-		//get corners
-		for (Block block : cornerBlocks){
-			if 		(block.getX() < lowestX) lowestX = block.getX();
-			else if (block.getX() > highestX) highestX= block.getX();
-			if 		(block.getZ() < lowestZ) lowestZ = block.getZ();
-			else if (block.getZ() > highestZ) highestZ= block.getZ();
+		
+		BlockFace directionFrom = directionTowards.getOppositeFace();
+		BlockFace directionFromLeft = getAdjacentLeftFace(directionFrom);
+		Block firstDestinationBlock = lastCorner.getRelative(directionTowards);
+		
+		
+		for (int destRow = 0; destRow < doorLength; destRow++){
+			for(int destCol = 0; destCol < doorWidth; destCol++){
+				Block destinationBlock = firstDestinationBlock.getRelative(directionFrom, destRow).getRelative(directionFromLeft, destCol);
+				Block sourceBlock = destinationBlock.getRelative(directionFrom);
+				destinationBlock.setType(sourceBlock.getType());
+				destinationBlock.setData(sourceBlock.getData());
+				
+				if(destRow == doorLength-1){
+					sourceBlock.setType(Material.AIR);
+				}
+			}
 		}
-		//getServer().getLogger().info("lowestX: " + lowestX +", highestX: " + highestX+", lowestZ: " + lowestZ +", highestZ: " + highestZ);
-		
-		String copyCommand = "clone";		//command to copy blocks
-		copyCommand = copyCommand + " " + String.valueOf(highestX );					//x1
-		copyCommand = copyCommand + " " + String.valueOf(cornerBlocks.get(0).getY());	//y1
-		copyCommand = copyCommand + " " + String.valueOf(highestZ);						//z1
-		
-		copyCommand = copyCommand + " " + String.valueOf(lowestX);						//x2
-		copyCommand = copyCommand + " " + String.valueOf(cornerBlocks.get(0).getY());	//y2
-		copyCommand = copyCommand + " " + String.valueOf(lowestZ);						//z2
-		
-		copyCommand = copyCommand + " " + String.valueOf(lowestX + xShiftTo);			//x
-		copyCommand = copyCommand + " " + String.valueOf(cornerBlocks.get(0).getY());	//y
-		copyCommand = copyCommand + " " + String.valueOf(lowestZ + zShiftTo);			//z
-		copyCommand = copyCommand + " replace force";									//replace and force
-		
-		Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), copyCommand);
-		
-		
-		ArrayList<Block> blocksUpForDeletion = new ArrayList<>();
-		BlockFace adjacentLeftFace = getAdjacentLeftFace(directionTowards);
-		for (int i = 0; i < doorWidth; i++){
-			blocksUpForDeletion.add(cornerBlocks.get(0).getRelative(adjacentLeftFace, i));
-		}
-		//getServer().getLogger().info("Deletion blocks: " + blocksUpForDeletion.toString());
-		lowestX = cornerBlocks.get(0).getX();
-		highestX = cornerBlocks.get(0).getX();
-		lowestZ = cornerBlocks.get(0).getZ();
-		highestZ = cornerBlocks.get(0).getZ();
-		//get corners
-		for (Block block : blocksUpForDeletion){
-			if 		(block.getX() < lowestX) lowestX = block.getX();
-			else if (block.getX() > highestX) highestX= block.getX();
-			if 		(block.getZ() < lowestZ) lowestZ = block.getZ();
-			else if (block.getZ() > highestZ) highestZ= block.getZ();
-		}
-		
-		
-		String fillCommand = "fill";		//command to fill space behind door with air
-		fillCommand = fillCommand + " " + String.valueOf(lowestX);						//x
-		fillCommand = fillCommand + " " + String.valueOf(cornerBlocks.get(0).getY());	//y
-		fillCommand = fillCommand + " " + String.valueOf(lowestZ);						//z
-		fillCommand = fillCommand + " " + String.valueOf(highestX);						//x
-		fillCommand = fillCommand + " " + String.valueOf(cornerBlocks.get(0).getY());	//y
-		fillCommand = fillCommand + " " + String.valueOf(highestZ);						//z
-		fillCommand = fillCommand + " minecraft:air";
-		
-		//getServer().getLogger().info("Fill cmd: " + fillCommand);
-		
-		
-		Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), fillCommand);
-		
 	}
 	
 	
