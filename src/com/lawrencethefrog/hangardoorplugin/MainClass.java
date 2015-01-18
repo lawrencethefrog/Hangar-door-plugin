@@ -143,7 +143,7 @@ public class MainClass extends JavaPlugin implements Listener{
 		BlockFace directionFromLeft = getAdjacentLeftFace(directionFrom);
 		Block firstDestinationBlock = lastCorner.getRelative(directionTowards);
 		
-		for (int destRow = 0; destRow <= doorLength; destRow++){
+		for (int destRow = 0; destRow < doorLength; destRow++){
 			for(int destCol = 0; destCol < doorWidth; destCol++){
 				Block destinationBlock = firstDestinationBlock.getRelative(directionFrom, destRow).getRelative(directionFromLeft, destCol);
 				Block sourceBlock = destinationBlock.getRelative(directionFrom);
@@ -151,7 +151,7 @@ public class MainClass extends JavaPlugin implements Listener{
 				destinationBlock.setData(sourceBlock.getData());
 				
 				
-				if(destRow == doorLength){
+				if(destRow == doorLength-1){
 					sourceBlock.setType(Material.AIR);
 				}
 			}
