@@ -1,4 +1,4 @@
 name: Hangar Door Plugin
-version: 2.1
+version: 2.2
 main: com.lawrencethefrog.hangardoorplugin.MainClass
 description: Adds horizontal sliding hangar doors

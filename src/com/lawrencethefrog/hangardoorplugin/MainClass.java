@@ -76,6 +76,7 @@ public class MainClass extends JavaPlugin implements Listener{
 				Block lastDoorCorner = null;
 				
 				int firstCornerRow = 0;
+				int firstCornerCol = 0;
 				int doorLength = 0;
 				
 				ArrayList<Block> doorBlocks = new ArrayList<>();
@@ -88,21 +89,25 @@ public class MainClass extends JavaPlugin implements Listener{
 							if (firstDoorCorner == null){									//if first allowed block found
 								firstDoorCorner = testingBlock;	 							//register as first corner
 								firstCornerRow = r;
+								firstCornerCol = c;
 							}
 							doorBlocks.add(testingBlock);
 							if (c == doorWidth){
 								lastDoorCorner = testingBlock;				//if on end of row register as last
 							}
 							doorLength = r;
-						} else if (firstDoorCorner != null)  {								//if not allowed block and  finish detection
-							doorLength = r-firstCornerRow;
-							break r;													//finish detection
+						} else {										//if not allowed block
+							
+							if (firstDoorCorner != null)  {				//if first door block has been found		
+								doorLength = r-firstCornerRow;
+								break r;													//finish detection
+							}
 						}
 					}
 				}
 				
 				//if no full row found, finish
-				if ((firstDoorCorner == null) || (lastDoorCorner == null) || (doorLength == 0)){
+				if ((firstDoorCorner == null) || (lastDoorCorner == null) || (doorLength == 0) || (firstCornerCol != 1)){
 					return;
 				}
 				
