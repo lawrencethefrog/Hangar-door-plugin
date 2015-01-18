@@ -50,7 +50,6 @@ public class MainClass extends JavaPlugin implements Listener{
 					Block testingBlock = firstIronBlock.getRelative(adjacentLeftFace, i);
 					if (testingBlock.getType() == Material.IRON_BLOCK) {
 						doorWidth = i -1;		//save door width (minus removes width of end rail)
-						//getServer().getLogger().info("Door width is " + doorWidth);
 						break;
 					}
 				}
@@ -91,28 +90,31 @@ public class MainClass extends JavaPlugin implements Listener{
 								firstCornerRow = r;
 							}
 							doorBlocks.add(testingBlock);
-							if (c == doorWidth) lastDoorCorner = testingBlock;				//if on end of row register as last
+							if (c == doorWidth){
+								lastDoorCorner = testingBlock;				//if on end of row register as last
+							}
+							doorLength = r;
 						} else if (firstDoorCorner != null)  {								//if not allowed block and  finish detection
 							doorLength = r-firstCornerRow;
 							break r;													//finish detection
 						}
 					}
 				}
+				
 				//if no full row found, finish
-				if ((firstDoorCorner == null) || (lastDoorCorner == null)){
-					//getServer().getLogger().info("Door detection failed! Either the door is longer than the frame or not a full row.");
+				if ((firstDoorCorner == null) || (lastDoorCorner == null) || (doorLength == 0)){
 					return;
 				}
+				
 				
 				//check blocks in front of lastDoorCorner's row are air				
 				for (int c = 0; c < doorWidth; c++){
 					Block testingBlock = lastDoorCorner.getRelative(direction).getRelative(adjacentRightFace, c);
 					if (testingBlock.getType() != Material.AIR){	//if air is not found in front of door
-						//getServer().getLogger().info("Block at X:" + testingBlock.getX() + ", Z:" + testingBlock.getZ() + " is not air!");
 						return;										//finish
 					}
 				}
-					
+									
 				nudgeBlocks(direction, firstDoorCorner, lastDoorCorner, doorBlocks, doorWidth, doorLength);
 				
 			}		
@@ -136,15 +138,15 @@ public class MainClass extends JavaPlugin implements Listener{
 		BlockFace directionFromLeft = getAdjacentLeftFace(directionFrom);
 		Block firstDestinationBlock = lastCorner.getRelative(directionTowards);
 		
-		
-		for (int destRow = 0; destRow < doorLength; destRow++){
+		for (int destRow = 0; destRow <= doorLength; destRow++){
 			for(int destCol = 0; destCol < doorWidth; destCol++){
 				Block destinationBlock = firstDestinationBlock.getRelative(directionFrom, destRow).getRelative(directionFromLeft, destCol);
 				Block sourceBlock = destinationBlock.getRelative(directionFrom);
 				destinationBlock.setType(sourceBlock.getType());
 				destinationBlock.setData(sourceBlock.getData());
 				
-				if(destRow == doorLength-1){
+				
+				if(destRow == doorLength){
 					sourceBlock.setType(Material.AIR);
 				}
 			}
