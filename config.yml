@@ -1,0 +1,8 @@
+MaxFrameLength: 50
+MaxDoorLength: 10
+MaxWidth: 10
+AllowedMaterials:
+    Door:
+        - "WOOD"
+    Frame:
+        - "IRON_BLOCK"
