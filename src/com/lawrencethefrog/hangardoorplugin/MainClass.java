@@ -78,7 +78,7 @@ public class MainClass extends JavaPlugin implements Listener{
 	}
 	
 	private void exitWithConfigError(String details){
-		getLogger().info("Something was wrong in the configuration file! The plugin will bedisabled. Details of the problem are below");
+		getLogger().info("Something was wrong in the configuration file! The plugin will be disabled. Details of the problem are below");
 		getLogger().info(details);
 		setEnabled(false);
 	}
