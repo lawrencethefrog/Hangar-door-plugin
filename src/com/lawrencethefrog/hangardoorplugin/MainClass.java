@@ -32,10 +32,10 @@ public class MainClass extends JavaPlugin implements Listener{
 
 	
 	@Override
-	public void onEnable(){
-		getServer().getLogger().info("Successfully started lawrencethefrog's hangar door plugin");
-		getServer().getPluginManager().registerEvents(this, this);
+	public void onEnable(){		
+		getServer().getPluginManager().registerEvents(this, this);	
 		doConfigThings();
+			
 	}
 	
 	private void doConfigThings(){
@@ -47,7 +47,7 @@ public class MainClass extends JavaPlugin implements Listener{
 		tryUpdateAtomicIntegerFromConfig(config, "MaxFrameLength", maxFrameLength);
 		tryUpdateAtomicIntegerFromConfig(config, "MaxWidth", maxWidth);
 		tryUpdateMaterialArrayListFromConfig(config, "AllowedMaterials.Door", allowedDoorMaterials);
-		tryUpdateMaterialArrayListFromConfig(config, "AllowedMaterial.Frame", allowedFrameMaterials);
+		tryUpdateMaterialArrayListFromConfig(config, "AllowedMaterials.Frame", allowedFrameMaterials);
 		
 	}
 	
@@ -55,7 +55,7 @@ public class MainClass extends JavaPlugin implements Listener{
 		Integer integer = config.getInt(configPath);
 		if (integer != null){
 			dest.set(integer.intValue());
-		}
+		} else exitWithConfigError("No integer value found at path " + configPath);
 	}
 	//method that updates arraylist of materials from config file
 	private void tryUpdateMaterialArrayListFromConfig(FileConfiguration config, String configPath, ArrayList<Material> dest){
@@ -63,18 +63,24 @@ public class MainClass extends JavaPlugin implements Listener{
 		
 		if (stringList != null){							//if the path is correct
 			ArrayList<Material> materialsFromConfig = new ArrayList<>();
-			for (String str : stringList){			//loops though material list from config
+			for (String str : stringList){					//loops though material list from config
 				Material parsedMaterial = Material.getMaterial(str);
-				if (parsedMaterial != null){		//if the item on the list is a valid material
+				if (parsedMaterial != null){				//if the item on the list is a valid material
 					materialsFromConfig.add(parsedMaterial);
-				}
+				} else exitWithConfigError("Invalid material found in material list at path " + configPath + " index " + stringList.indexOf(str));
 			}
 			//if any correct items were found in the config, overwrites the ArrayList
 			if(materialsFromConfig.size() != 0){
 				dest.clear();
 				dest.addAll(materialsFromConfig);
-			}			
-		}
+			} else exitWithConfigError("No materials were found in the list at path " + configPath);
+		} else exitWithConfigError("Nothing found at path " + configPath);
+	}
+	
+	private void exitWithConfigError(String details){
+		getLogger().info("Something was wrong in the configuration file! The plugin will bedisabled. Details of the problem are below");
+		getLogger().info(details);
+		setEnabled(false);
 	}
 	
 	@EventHandler(priority = EventPriority.NORMAL)
