@@ -15,6 +15,10 @@ import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.material.Diode;
 
+//TODO add built-in timer
+//TODO fix overextension bug
+
+
 public class MainClass extends JavaPlugin implements Listener{
 	
 	//uses atomic integers so they can be modified in a method
@@ -135,7 +139,7 @@ public class MainClass extends JavaPlugin implements Listener{
 				
 				ArrayList<Block> doorBlocks = new ArrayList<>();
 				//finds door corners
-				rowLoop: for(int row = 1; row <= frameLength; row++){
+				rowLoop: for(int row = 1; row < frameLength; row++){
 					for(int c = 1; c <= doorWidth; c++){
 						Block testingBlock = poweredBlock.getRelative(direction, row).getRelative(adjacentRightFace, c);
 						if (allowedDoorMaterials.contains(testingBlock.getType())){					//if door block found
