@@ -1,6 +1,7 @@
 MaxFrameLength: 50
 MaxDoorLength: 10
 MaxWidth: 10
+TicksBetweenCycles: 10
 AllowedMaterials:
     Door:
         - "WOOD"
