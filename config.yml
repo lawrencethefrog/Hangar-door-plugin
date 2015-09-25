@@ -1,9 +1,15 @@
-MaxFrameLength: 50
-MaxDoorLength: 10
-MaxWidth: 10
-TicksBetweenCycles: 10
-AllowedMaterials:
-    Door:
-        - "WOOD"
-    Frame:
-        - "IRON_BLOCK"
+#The maximum width of the door. Includes both frame blocks and the door itself.
+MaxFrameWidth: 32
+#The maximum length of the door frame. Includes frame loops and crossings if 'AllowFrameCrossings' is set to true.
+MaxFrameLength: 200
+#The ticks between each time the door moves.
+MovePeriod: 20
+#The material the door is made of
+FrameMaterial: SPONGE
+#If false, does not allow any one frame to cross itself. Different frames are allowed to cross each other regardless of how this is set.
+AllowFrameCrossings: false
+#Definitions of door types.
+DoorTypes:
+    #For example the door below must have 'Hangar Door' on the first line of the control sign and be made of WOOD (planks).
+    Hangar Door : WOOD
+    Blast Door  : IRON_BLOCK

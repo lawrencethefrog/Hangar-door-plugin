@@ -1,112 +1,122 @@
 package com.lawrencethefrog.hangardoorplugin;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 import org.bukkit.Material;
+import org.bukkit.Server;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.material.Sign;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.material.Diode;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class MainClass extends JavaPlugin implements Listener {
-	//TODO config option for ticksBetweenCycles
-	//uses atomic integers so they can be modified in a method
-	AtomicInteger maxFrameLength = new AtomicInteger(50);
-	AtomicInteger maxWidth = new AtomicInteger(10);
-	AtomicInteger ticksBetweenCycles = new AtomicInteger(20);
+public class MainClass extends JavaPlugin implements Listener {	
 	
-
-	@SuppressWarnings("serial")
-	ArrayList<Material> allowedDoorMaterials = new ArrayList<Material>(){{
-		add(Material.WOOD);
-	}};
-	@SuppressWarnings("serial")
-	ArrayList<Material> allowedFrameMaterials = new ArrayList<Material>(){{
-		add(Material.IRON_BLOCK);
-	}};
+	private Material frameMaterial;
+	private int maxFrameWidth;
+	private long period;
+	private HashMap<String, Material> doorTypes;
+	private int maxLength;
+	private boolean allowCrossings;
 	
-	public AtomicInteger getMaxFrameLength() {
-		return maxFrameLength;
-	}
-
-	public AtomicInteger getMaxWidth() {
-		return maxWidth;
-	}
-	public AtomicInteger getTicksBetweenCycles() {
-		return ticksBetweenCycles;
-	}
-	public ArrayList<Material> getAllowedDoorMaterials() {
-		return allowedDoorMaterials;
-	}
-	
-	public ArrayList<Material> getAllowedFrameMaterials() {
-		return allowedFrameMaterials;
-	}
-
+	@Override
+	public void onEnable(){
+		Server server = getServer();
+		Logger logger = getLogger();
 		
-		@Override
-	public void onEnable(){		
-		getServer().getPluginManager().registerEvents(this, this);	
-		doConfigThings();
-			
-	}
-	
-	private void doConfigThings(){
-		//if there is no config, saves the default one from the jar
+		doorTypes = new HashMap<>();
+		
 		saveDefaultConfig();
-		
 		FileConfiguration config = getConfig();
 		
-		tryUpdateAtomicIntegerFromConfig(config, "MaxFrameLength", maxFrameLength);
-		tryUpdateAtomicIntegerFromConfig(config, "MaxWidth", maxWidth);
-		tryUpdateAtomicIntegerFromConfig(config, "TicksBetweenCycles", ticksBetweenCycles);
-		tryUpdateMaterialArrayListFromConfig(config, "AllowedMaterials.Door", allowedDoorMaterials);
-		tryUpdateMaterialArrayListFromConfig(config, "AllowedMaterials.Frame", allowedFrameMaterials);
+		String frameMaterialString = config.getString("FrameMaterial");
+		if(frameMaterialString == null) {
+			logger.info("Error reading plugin configuration, no frame material defined!");
+			setEnabled(false);
+			return;
+		}
+		Material configFrameMaterial = Material.valueOf(frameMaterialString);
+		if(configFrameMaterial == null){
+			logger.info("Error reading plugin configuration, invalid frame material!");
+			setEnabled(false);
+			return;
+		}
+		frameMaterial = configFrameMaterial;
 		
-	}
-	//method that updates AtomicInteger from config
-	private void tryUpdateAtomicIntegerFromConfig(FileConfiguration config, String configPath, AtomicInteger dest){
-		Integer integer = config.getInt(configPath);
-		if (integer != null){
-			if(integer.equals(0)){
-				exitWithConfigError("Integer value at " + configPath + " must not be null or equal to 0");
-			} //else
-			dest.set(integer.intValue());
-		} else exitWithConfigError("No integer value found at path " + configPath);
-	}
-	//method that updates ArrayList of materials from config file
-	private void tryUpdateMaterialArrayListFromConfig(FileConfiguration config, String configPath, ArrayList<Material> dest){
-		List<String> stringList = config.getStringList(configPath);
-		
-		if (stringList != null){							//if the path is correct
-			ArrayList<Material> materialsFromConfig = new ArrayList<>();
-			for (String str : stringList){					//loops though material list from config
-				Material parsedMaterial = Material.getMaterial(str);
-				if (parsedMaterial != null){				//if the item on the list is a valid material
-					materialsFromConfig.add(parsedMaterial);
-				} else exitWithConfigError("Invalid material found in material list at path " + configPath + " index " + stringList.indexOf(str));
+		maxFrameWidth = config.getInt("MaxFrameWidth");
+		period = config.getLong("MovePeriod");
+		maxLength = config.getInt("MaxFrameLength");
+		allowCrossings = config.getBoolean("AllowFrameCrossings");
+				
+		ConfigurationSection mapSec = config.getConfigurationSection("DoorTypes");
+		if (mapSec == null) {
+			logger.info("Error reading plugin configuration, no door types defined!");
+			setEnabled(false);
+			return;		
+		}
+		Map<String, Object> configFrameMaterials = mapSec.getValues(false);
+		for (String key : configFrameMaterials.keySet()){
+			Object object = configFrameMaterials.get(key);
+			Material material = Material.valueOf(object.toString());
+			if (material == null) {
+				logger.info("Error reading plugin configuration, invalid door type definetion found!");
+				setEnabled(false);
+				return;
 			}
-			//if any correct items were found in the config, overwrites the ArrayList
-			if(materialsFromConfig.size() != 0){
-				dest.clear();
-				dest.addAll(materialsFromConfig);
-			} else exitWithConfigError("No materials were found in the list at path " + configPath);
-		} else exitWithConfigError("Nothing found at path " + configPath);
+			else doorTypes.put(key, material);
+		}
+		logger.info("Succesfully initialized plugin.");		
+		server.getPluginManager().registerEvents(this, this);
 	}
 	
-	private void exitWithConfigError(String details){
-		getLogger().info("Something was wrong in the configuration file! The plugin will be disabled. Details of the problem are below");
-		getLogger().info(details);
-		setEnabled(false);
+	@EventHandler
+	public void onRestone(BlockRedstoneEvent event){
+		Block poweredBlock = event.getBlock();
+		if(poweredBlock.getType() != Material.DIODE_BLOCK_OFF) return;					//checks if repeater		
+		@SuppressWarnings("deprecation")
+		Diode repeater = new Diode(poweredBlock.getTypeId(), poweredBlock.getData());
+		BlockFace repeaterDir = repeater.getFacing();
+		Block signBlock = poweredBlock.getRelative(repeaterDir);		
+		if(signBlock.getType() != Material.WALL_SIGN) return;							//checks if wall sign present
+		@SuppressWarnings("deprecation")
+		Sign materialSign = new Sign(Material.WALL_SIGN, signBlock.getData());
+		BlockFace signDir = materialSign.getAttachedFace();
+		Block blockBehindSign = signBlock.getRelative(signDir);
+		if(blockBehindSign.getType() != frameMaterial) return;							//checks frame block behind sign
+		
+		int frameWidth = 0;
+		Block farFrameBlock = null;
+		for (int i = 2; i< maxFrameWidth; i++){											//searches for opposite frame block
+			Block block = blockBehindSign.getRelative(signDir, i);
+			if (block.getType() == frameMaterial){
+				frameWidth = i+1;
+				farFrameBlock = block;
+				break;			
+			}			
+		}
+		if (frameWidth == 0) return;														//checks if other frame block found
+		
+		org.bukkit.block.Sign blockSign = (org.bukkit.block.Sign)signBlock.getState();
+		String signLine = blockSign.getLine(0).replace("񖶄", "");;
+		Material doorMaterial = doorTypes.get(signLine);	//gets door material
+		if(doorMaterial == null) return;
+		
+		new Door(this, frameWidth, signBlock, poweredBlock, blockBehindSign, farFrameBlock, signDir, doorMaterial, allowCrossings , maxLength);
+	}
+
+	long getPeriod() {
+		return period;
 	}
 	
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onRedstone(BlockRedstoneEvent event){
-		new MoveTask(event, this);
+	Material getFrameMaterial(){
+		return frameMaterial;
 	}
 
 }
